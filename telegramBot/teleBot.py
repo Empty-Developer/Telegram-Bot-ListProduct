@@ -1,221 +1,148 @@
-import os
-from telegram import Update
-from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from dotenv import load_dotenv
+import telebot
 
-# Загружаем переменные окружения
-load_dotenv()
-
-TOKEN = os.getenv("TELEGRAM_TOKEN")
-
-# Если переменная окружения пустая, используем токен напрямую
-if not TOKEN:
-    TOKEN = "8579260504:AAFYQtkbam2lWeSyDPfu6DO_wnZCO3bRoyM"
-
-# Хранилище данных пользователей (в памяти)
-user_data = {}
+# <s></s> - strikethrough text
+TOKEN = '8579260504:AAFYQtkbam2lWeSyDPfu6DO_wnZCO3bRoyM'
+bot = telebot.TeleBot(TOKEN)
 
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /start"""
-    user = update.effective_user
-    welcome_text = f"""
-👋 Привет, {user.first_name}!
+# help
+@bot.message_handler(commands=['help'])
+def send_help(message):
+    help_text = (
+        '💎 <b>Quick Command Guide</b>\n\n'
 
-Я простой чат-бот. Вот что я умею:
+        '⚡️ <b>Essentials:</b>\n'
+        '• <code>/start</code> – show intro & rules\n'
+        '• <code>/help</code> – this message\n\n'
 
-📝 <b>Основные команды:</b>
-/start - показать это сообщение
-/help - помощь по командам
-/echo [текст] - повторить текст
-/count - посчитать сообщения
+        '🛒 <b>Shopping Mode:</b>\n'
+        '• <code>/add milk</code>\n'
+        '• <code>/list</code> – view numbered list\n'
+        '• <code>/done 2</code> – mark #2 as bought\n'
+        '• <code>/clear</code> – delete everything\n\n'
 
-💬 <b>Просто общение:</b>
-Напиши мне что-нибудь, и я отвечу!
+        '🎯 <b>Format:</b>\n'
+        '<code>/add item</code>\n'
+        '<code>/done [number]</code>\n\n'
 
-📊 <b>Статистика:</b>
-Используй /count чтобы посмотреть сколько сообщений ты отправил.
-
-Наслаждайся общением! ✨
-    """
-    await update.message.reply_html(welcome_text)
-
-    # Инициализируем счетчик для пользователя
-    user_data[user.id] = {"message_count": 0}
-
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /help"""
-    help_text = """
-🆘 <b>Помощь по командам:</b>
-
-<b>Основные команды:</b>
-/start - начать работу с ботом
-/help - показать эту справку
-
-<b>Интерактивные команды:</b>
-/echo [текст] - бот повторит ваш текст
-/count - показать количество ваших сообщений
-/reset - сбросить счетчик сообщений
-
-<b>Примеры использования:</b>
-<code>/echo Привет, мир!</code>
-<code>/count</code>
-<code>/reset</code>
-
-Просто напиши любое сообщение, и я отвечу тебе! 😊
-    """
-    await update.message.reply_html(help_text)
-
-
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /echo"""
-    user_id = update.effective_user.id
-
-    # Получаем текст после команды /echo
-    if context.args:
-        text_to_echo = ' '.join(context.args)
-        await update.message.reply_text(f"📣 {text_to_echo}")
-    else:
-        await update.message.reply_text("📝 Напиши: /echo [текст]\nПример: /echo Привет мир!")
-
-
-async def count_messages(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /count"""
-    user_id = update.effective_user.id
-    user = update.effective_user
-
-    # Инициализируем счетчик если нет
-    if user_id not in user_data:
-        user_data[user_id] = {"message_count": 0}
-
-    count = user_data[user_id]["message_count"]
-
-    if count == 0:
-        response = f"📊 {user.first_name}, ты еще не отправлял мне сообщений!"
-    else:
-        response = f"📊 {user.first_name}, ты отправил мне {count} сообщений!"
-
-    await update.message.reply_text(response)
-
-
-async def reset_count(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик команды /reset"""
-    user_id = update.effective_user.id
-
-    if user_id in user_data:
-        user_data[user_id]["message_count"] = 0
-        await update.message.reply_text("🔄 Счетчик сообщений сброшен!")
-    else:
-        await update.message.reply_text("🤔 У тебя еще нет счетчика. Напиши что-нибудь сначала!")
-
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик обычных сообщений"""
-    user_id = update.effective_user.id
-    user_message = update.message.text
-    user_name = update.effective_user.first_name
-
-    # Увеличиваем счетчик сообщений
-    if user_id not in user_data:
-        user_data[user_id] = {"message_count": 1}
-    else:
-        user_data[user_id]["message_count"] += 1
-
-    # Простые ответы на базовые фразы
-    user_message_lower = user_message.lower()
-
-    if any(word in user_message_lower for word in ["привет", "hello", "hi", "хай"]):
-        response = f"Привет, {user_name}! 👋"
-
-    elif any(word in user_message_lower for word in ["как дела", "how are you", "как ты"]):
-        response = "У меня всё отлично, спасибо! А у тебя? 😊"
-
-    elif any(word in user_message_lower for word in ["спасибо", "thanks", "thank you"]):
-        response = "Всегда пожалуйста! 😊"
-
-    elif any(word in user_message_lower for word in ["пока", "до свидания", "bye", "goodbye"]):
-        response = "Пока! Буду рад тебя видеть снова! 👋"
-
-    elif "?" in user_message:
-        responses = [
-            "Интересный вопрос! 🤔",
-            "Хм, давай подумаем... 💭",
-            "Может быть! 🤷‍♂️",
-            "Сложно сказать...",
-            "Попробуй спросить иначе?",
-            f"{user_name}, хороший вопрос! 😊"
-        ]
-        import random
-        response = random.choice(responses)
-
-    else:
-        # Общий ответ на другие сообщения
-        responses = [
-            f"Понял тебя, {user_name}!",
-            "Интересно!",
-            "Расскажи подробнее?",
-            "Продолжаем разговор!",
-            "Записал! 📝",
-            "Спасибо за сообщение!",
-            f"Классно, {user_name}!",
-            "Ух ты! 😮"
-        ]
-        import random
-        response = random.choice(responses)
-
-    await update.message.reply_text(response)
-
-
-async def unknown_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Обработчик неизвестных команд"""
-    await update.message.reply_text(
-        "🤔 Не знаю такую команду.\n"
-        "Попробуй /help чтобы увидеть все доступные команды."
+        '📌 <i>Items get <s>crossed out</s> when bought</i>'
     )
+    bot.send_message(message.chat.id, help_text, parse_mode='HTML')
 
 
-def main():
-    """Основная функция запуска бота"""
-    print(f"🔧 Загружаем токен: {TOKEN[:10]}...")
+# start
+@bot.message_handler(commands=['start'])
+def send_start(message):
+    start_text = (
+        '🛒 <b>SHOP BOT – YOUR PERSONAL MEMORY PROSTHESIS</b> 👽\n\n'
 
-    # Проверяем токен
-    if not TOKEN:
-        print("❌ ОШИБКА: Токен не найден!")
-        print("Добавьте TELEGRAM_TOKEN в .env файл или укажите напрямую в коде")
+        '💅 <b>MAIN VIBES:</b>\n'
+        '🤖 <code>/start</code> – show this ultimate guide\n'
+        '🤖 <code>/help</code> – same energy, different name\n\n'
+
+        '🔥 <b>SHOPPING HACKS:</b>\n'
+        '➕ <code>/add</code> – manifest products into existence\n'
+        'Example: <code>/add oat</code>\n'
+        'Use commas or just vibe with it\n\n'
+
+        '📋 <code>/list</code> – flex your organized self\n'
+        'Bought stuff gets <s>slashed</s> ✅\n\n'
+
+        '✅ <code>/done [number]</code> – yeet item from the list\n'
+        'Example: <code>/done 3</code> – deletes the third item\n\n'
+
+        '💀 <code>/clear</code> – nuclear option\n'
+        '(no take-backsies)\n\n'
+
+        '⚠️ <b>PRO TIPS:</b>\n'
+        '• Your list = your business 👀\n'
+        '• Auto-save = zero brain cells required 🧠\n'
+        '• Add multiple items = big brain move 🧠\n'
+        '• Numbers update automatically = magic ✨\n\n'
+
+        '🎮 <b>HOW TO PLAY:</b>\n'
+        '1. <code>/add matcha</code>\n'
+        '2. <code>/list</code> – check your loot\n'
+        '3. At store: <code>/done 1</code> – matcha secured\n'
+        '4. <code>/list</code> – see <s>matcha</s> ✅ flex\n\n'
+
+        'Bottom line: never forget avocado again 🥑✨\n'
+        'Your brain\'s favorite cheat code 🧠💥'
+    )
+    bot.send_message(message.chat.id, start_text, parse_mode='HTML')
+
+
+# add
+user_todo_list = {}
+
+@bot.message_handler(commands=['add'])
+def send_add(message):
+    user_id = int(message.from_user.id)
+    text = message.text.replace('/add', '').strip()
+
+    if not text:
+        bot.reply_to(message, "Error")
         return
 
-    try:
-        # Создаем приложение
-        app = ApplicationBuilder().token(TOKEN).build()
+    if user_id not in user_todo_list:
+        user_todo_list[user_id] = []
 
-        # Добавляем обработчики команд
-        app.add_handler(CommandHandler("start", start))
-        app.add_handler(CommandHandler("help", help_command))
-        app.add_handler(CommandHandler("echo", echo))
-        app.add_handler(CommandHandler("count", count_messages))
-        app.add_handler(CommandHandler("reset", reset_count))
+    user_todo_list[user_id].append(text)
+    bot.reply_to(message, "Added =)")
 
-        # Обработчик обычных сообщений (все текстовые сообщения кроме команд)
-        app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+# list
+@bot.message_handler(commands=['list'])
+def send_list(message):
+    user_id = int(message.from_user.id)
 
-        # Обработчик неизвестных команд (должен быть последним)
-        app.add_handler(MessageHandler(filters.COMMAND, unknown_command))
+    if user_id not in user_todo_list or not user_todo_list[user_id]:
+        bot.send_message(message.chat.id,"empty")
+        return
 
-        print("🤖 Бот запускается...")
-        print("⚠️  Убедись, что у тебя нет активного webhook (ошибка 409)")
-        print("   Если есть, выполни: curl https://api.telegram.org/bot{TOKEN}/deleteWebhook")
+    task = user_todo_list[user_id]
+    text = '<b>List</b>\n\n'
 
-        # Запускаем бота
-        app.run_polling(allowed_updates=Update.ALL_TYPES)
+    for i, task in enumerate(task, 1):
+        text += f'{i}. {task}\n'
 
-    except Exception as e:
-        print(f"❌ Ошибка при запуске бота: {e}")
-        print("🔧 Проверь:")
-        print("   1. Правильность токена")
-        print("   2. Наличие интернет-соединения")
-        print("   3. Библиотеки установлены (pip install python-telegram-bot python-dotenv)")
+    text += 'Delete product /done (number)\n'
+    bot.send_message(message.chat.id, text, parse_mode='HTML')
 
+@bot.message_handler(commands=['done'])
+def send_done(message):
+    user_id = int(message.from_user.id)
 
-if __name__ == '__main__':
-    main()
+    if user_id not in user_todo_list or not user_todo_list[user_id]:
+        bot.send_message(message.chat.id,"empty")
+        return
+
+    text = message.text.replace('/done', '').strip()
+
+    if not text.isdigit():
+        bot.reply_to(message, "Error")
+        return
+
+    task_num = int(text)
+
+    tasks = user_todo_list[user_id]
+    if task_num < 1 or task_num > len(tasks):
+        bot.reply_to(message, "Error")
+        return
+
+    delete_task = tasks.pop(task_num - 1)
+    bot.reply_to(message, "Done")
+
+# clear
+
+@bot.message_handler(commands=['clear'])
+def send_clear(message):
+    user_id = int(message.from_user.id)
+    if user_id in user_todo_list:
+        count = len(user_todo_list[user_id])
+        user_todo_list[user_id] = []
+        bot.reply_to(message, "Clear =)")
+    else:
+        bot.reply_to(message, "Error")
+
+print('bot started')
+bot.polling(none_stop=True)
