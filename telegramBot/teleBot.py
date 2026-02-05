@@ -1,7 +1,7 @@
 import telebot
-
+import os
 # <s></s> - strikethrough text
-TOKEN = '8579260504:AAFYQtkbam2lWeSyDPfu6DO_wnZCO3bRoyM'
+TOKEN = os.getenv("TELEGRAM_TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 
@@ -145,4 +145,8 @@ def send_clear(message):
         bot.reply_to(message, "Error")
 
 print('bot started')
+
+# ⚠️ ДОБАВЬТЕ ЭТУ СТРОЧКУ ПЕРЕД bot.polling()
+bot.delete_webhook()
+
 bot.polling(none_stop=True)
