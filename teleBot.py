@@ -1,7 +1,7 @@
 import telebot
 
 # <s></s> - strikethrough text
-TOKEN = 'your token bro'
+TOKEN = '8579260504:AAFYQtkbam2lWeSyDPfu6DO_wnZCO3bRoyM'
 bot = telebot.TeleBot(TOKEN)
 
 
